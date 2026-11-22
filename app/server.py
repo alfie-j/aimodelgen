@@ -98,7 +98,7 @@ def enabled_backends() -> dict[str, Backend]:
     ids = [b.strip() for b in os.environ.get("TEACHBOT_BACKENDS", CFG["default_backends"]).split(",") if b.strip()]
     out = {i: Backend(i, CFG["backends"][i]) for i in ids if i in CFG["backends"]}
     if TEST_MODE:
-        out = {"test": Backend("test", {"label": "TEST BACKEND", "detail": "scripted text for interface tests, not a model",
+        out = {"test": Backend("test", {"label": "Test backend", "detail": "fixed text for interface tests, not a model",
                                         "kind": "test", "type": "test"})}
     return out
 
