@@ -325,7 +325,7 @@ function renderHow() {
   $("#how").innerHTML = `<div class="inner">
     <h2 class="h-xl">How Teach Bot works</h2>
     <p class="intro">An AI tutor for one small piece of olympiad astronomy: how bright a star looks and how far away it is. It teaches in five stages, starts every idea from a picture, and checks understanding before moving on.</p>
-    <div class="note"><b>About this demo.</b> It is an example of what our tutor does. It runs the Teach Bot method as a prompt on ${esc(model.label)}${model.test ? " (test mode, no model connected)" : ""}, with the topic notes and past problems pinned into every turn. The fine-tuned student model from the project is not part of this demo.</div>
+    <div class="note"><b>About this demo.</b> An illustrative demo of the Teach Bot student: it shows how a lesson with the student runs, with replies generated live${model.test ? " (right now in test mode, with fixed replies)" : ""}. The topic notes and past problems are pinned into every turn.</div>
 
     <section class="part">
       <h3>The method we built</h3>
@@ -354,7 +354,7 @@ function renderHow() {
 
     <section class="part">
       <h3>Training settings in the original project</h3>
-      <p>As reported by the team. Not used by this demo.</p>
+      <p>As reported by the team.</p>
       <table class="spec"><tbody>
         <tr><td>Teacher</td><td>Kimi K3</td></tr>
         <tr><td>Student base</td><td>Qwen2.5-14B-Instruct</td></tr>
@@ -433,11 +433,11 @@ function setupTheme() {
 function renderStatus() {
   const m = state.status.model, el = $("#status");
   el.className = `status ${m.ready ? "ok" : "bad"}`;
-  $("#statusText").textContent = m.test ? "Test mode" : m.ready ? m.label : "No API key";
-  el.title = m.problem || (m.test ? "Scripted replies, no model" : `${m.label} (${m.model_id}) via ${m.provider}`);
+  $("#statusText").textContent = m.test ? "Test mode" : m.ready ? "Connected" : "No API key";
+  el.title = m.problem || (m.test ? "Fixed replies for interface checks" : "Ready");
   $("#testbar").hidden = !m.test;
   if (m.test) $("#fineprint").textContent = "Test mode: fixed replies for checking the interface. No model is connected.";
-  else $("#fineprint").textContent = `Example of the Teach Bot method, running on ${m.label} with our tutor prompt. It can make mistakes.`;
+  else $("#fineprint").textContent = "Illustrative demo of the Teach Bot student. It can make mistakes.";
 }
 
 async function init() {

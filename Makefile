@@ -3,10 +3,14 @@ PY ?= python3
 N  ?= 1200       # learner prompts to generate lessons for
 W  ?= 8          # parallel API calls
 
-.PHONY: help test compare blind summarise seeds generate filter review dataset data train eval eval-judge app app-test study export
+MODEL ?= deepseek-v4-flash
+
+.PHONY: help check test compare blind summarise seeds generate filter review dataset data train eval eval-judge app app-test study export
 help:
 	@grep -E '^[a-z-]+:.*##' Makefile | sed 's/:.*##/\t/'
 
+check:       ## test the API key with one tiny call
+	$(PY) -m tools.llm ping $(MODEL)
 test:        ## run all tests (CPU, no keys needed)
 	$(PY) -m pytest -q tests
 compare:     ## 1a run candidate teachers on the comparison prompts

@@ -54,11 +54,13 @@ def test_missing_key_is_reported(tmp_path, monkeypatch):
     import app.server as S
     importlib.reload(S)
     c = TestClient(S.app)
-    m = c.get("/api/status").json()["model"]
-    assert m["key"] == "deepseek-v4-flash" and not m["ready"] and "DEEPSEEK_API_KEY" in m["problem"]
+    raw = c.get("/api/status").text
+    m = json.loads(raw)["model"]
+    assert not m["ready"] and "No API key" in m["problem"]
+    assert "deepseek" not in raw.lower() and "flash" not in raw.lower()  # the browser never learns the model
     lid = c.post("/api/learners", json={}).json()["id"]
     ev = events(c.post("/api/chat", json={"learner_id": lid, "message": "hi"}))
-    assert ev[0]["type"] == "error" and "DEEPSEEK_API_KEY" in ev[0]["message"]
+    assert ev[0]["type"] == "error" and "No API key" in ev[0]["message"]
 
 
 def test_prompt_renders():
@@ -66,6 +68,15 @@ def test_prompt_renders():
     from app.server import tutor_system
     s = tutor_system(M.blank_memory())
     assert "[[sim:inverse-square]]" in s and "P06" in s and "{memory}" not in s
+    assert "Do not name any AI model" in s
+
+
+def test_static_files_never_name_the_model():
+    from pathlib import Path
+    static = Path(__file__).resolve().parent.parent / "app" / "static"
+    for f in list(static.glob("*.html")) + list(static.glob("*.js")) + list(static.glob("*.css")):
+        t = f.read_text().lower()
+        assert "deepseek" not in t and "kimi" not in t.replace("kimi k3", ""), f.name
 
 
 def test_memory_merge_rejects_garbage():

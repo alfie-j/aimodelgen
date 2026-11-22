@@ -123,6 +123,16 @@ class LLM:
         return kw
 
     # ------------------------------------------------------------------ #
+    def _without_extra(self, e: Exception, kw: dict[str, Any]) -> bool:
+        """If the API rejects the model's extra settings (e.g. a 'thinking' switch it
+        doesn't know), carry on without them for the rest of the session."""
+        if getattr(e, "status_code", None) == 400 and "extra_body" in kw:
+            del kw["extra_body"]
+            self.spec = {k: v for k, v in self.spec.items() if k != "extra_body"}
+            print(f"[llm] {self.key}: API rejected the extra settings; continuing without them")
+            return True
+        return False
+
     def chat(
         self,
         messages: list[dict[str, str]],
@@ -140,7 +150,9 @@ class LLM:
                 resp = self.client.chat.completions.create(messages=messages, **kw)
                 break
             except Exception as e:  # network / rate limit: back off and retry
-                if attempt == retries:
+                if self._without_extra(e, kw):
+                    continue
+                if attempt == retries or getattr(e, "status_code", None) in (400, 401, 402, 403, 404):
                     raise
                 print(f"[llm] {self.key} error ({type(e).__name__}: {str(e)[:120]}); retry in {delay:.0f}s")
                 time.sleep(delay)
@@ -172,9 +184,16 @@ class LLM:
         t0 = time.time()
         out: list[str] = []
         tin = tout = 0
-        resp = self.client.chat.completions.create(
-            messages=messages, stream=True, stream_options={"include_usage": True}, **kw
-        )
+        try:
+            resp = self.client.chat.completions.create(
+                messages=messages, stream=True, stream_options={"include_usage": True}, **kw
+            )
+        except Exception as e:
+            if not self._without_extra(e, kw):
+                raise
+            resp = self.client.chat.completions.create(
+                messages=messages, stream=True, stream_options={"include_usage": True}, **kw
+            )
         for chunk in resp:
             if getattr(chunk, "usage", None):
                 tin = chunk.usage.prompt_tokens or 0

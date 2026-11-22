@@ -4,7 +4,7 @@ An AI tutor for one small piece of olympiad astronomy: how bright a star looks a
 
 DSAI1202 · LEC008 Group 4 · Alfie Jesson John, Fung Sum Ming. This repository is a rebuild of the original project (see [docs/DEMO_DAY.md](docs/DEMO_DAY.md)).
 
-**To run the demo: [docs/DEMO.md](docs/DEMO.md).** It's an example of what the tutor does: the Teach Bot method as a prompt on an API model (DeepSeek V4 Flash by default, a few cents per lesson). No GPU, no training. Short version: put `DEEPSEEK_API_KEY` in `.env`, then `make app`.
+**To run the demo: [docs/DEMO.md](docs/DEMO.md).** An illustrative demo of the Teach Bot student, generated live by an API model with the Teach Bot prompt. No GPU, no training. Short version: put `DEEPSEEK_API_KEY` in `.env`, run `make check`, then `make app`.
 
 The full training pipeline below is kept in the repository for reference. To run it on a GPU, see [docs/RUNBOOK.md](docs/RUNBOOK.md).
 

@@ -57,7 +57,7 @@
               <textarea id="input" rows="1" placeholder="Ask Teach Bot about brightness, magnitudes or distance…" aria-label="Message"></textarea>
               <button class="send" id="sendBtn" type="submit" aria-label="Send"><svg viewBox="0 0 16 16"><path d="M8 13V3M3.5 7.5 8 3l4.5 4.5"/></svg></button>
             </div>
-            <p class="fine" id="fineprint">Example of the Teach Bot method, running on an API model with our tutor prompt. It can make mistakes.</p>
+            <p class="fine" id="fineprint">Illustrative demo of the Teach Bot student. It can make mistakes.</p>
           </form>
         </div>
         <aside class="insp" id="insp" aria-label="Lesson progress">
@@ -86,8 +86,8 @@
       </header>
       <div class="page">
         <div class="lead">
-          <h2 class="h-xl">Does the tutor prompt matter?</h2>
-          <p>The same model answers the same question twice: once with the Teach Bot prompt, once with the lazy baseline from our comparison kit ("Here are some notes and past exam problems. Help me with this."). Only the prompt differs.</p>
+          <h2 class="h-xl">Teach Bot vs a generic answer</h2>
+          <p>The same question, answered by Teach Bot and by a general assistant given the same notes with a lazy request ("Here are some notes and past exam problems. Help me with this."), the baseline from our comparison kit.</p>
         </div>
         <div class="askbar">
           <select id="preset" aria-label="Example question"></select>
@@ -98,12 +98,12 @@
         </div>
         <div class="cols">
           <article class="col" id="col0">
-            <header><h3>With the Teach Bot prompt</h3><p>Five stages, picture first, check-in questions</p></header>
+            <header><h3>Teach Bot</h3><p>Five stages, picture first, check-in questions</p></header>
             <div class="col-body"><p class="muted">Pick or type a question, then press Ask both.</p></div>
             <footer></footer>
           </article>
           <article class="col" id="col1">
-            <header><h3>No prompt design</h3><p>The lazy baseline, same notes, same model</p></header>
+            <header><h3>Generic assistant</h3><p>Same notes, no teaching design</p></header>
             <div class="col-body"><p class="muted">The answer appears here.</p></div>
             <footer></footer>
           </article>

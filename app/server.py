@@ -54,13 +54,12 @@ class Model:
 
     def info(self) -> dict:
         if TEST_MODE:
-            return {"key": "test", "label": "Test backend", "provider": "none", "ready": True,
-                    "problem": None, "test": True}
+            return {"ready": True, "problem": None, "test": True}
         env = self.provider["key_env"]
         ready = bool(os.environ.get(env)) or bool(self.provider.get("no_key"))
-        return {"key": self.key, "label": self.spec.get("label", self.key), "provider": self.spec["provider"],
-                "model_id": self.spec["model"], "ready": ready, "test": False,
-                "problem": None if ready else f"No API key: set {env} in .env and restart."}
+        # Deliberately generic: the browser never learns which API model is behind the demo.
+        return {"ready": ready, "test": False,
+                "problem": None if ready else "No API key. Add it to the .env file and restart the app."}
 
     def llm(self):
         if self._llm is None:
@@ -80,6 +79,8 @@ class Model:
 
 
 MODEL = Model(MODEL_KEY)
+print(f"[teachbot] {'TEST MODE (scripted replies)' if TEST_MODE else 'model: ' + MODEL_KEY + ' (' + MODEL.spec['model'] + ')'}; "
+      f"API key {'found' if MODEL.info()['ready'] else 'MISSING'}")
 
 SCRIPTED = """[Stage: Teach]
 <thought>
@@ -158,12 +159,17 @@ def stream_response(gen) -> StreamingResponse:
 def friendly(e: Exception) -> str:
     s = str(e)
     if "401" in s or "Authentication" in s or "api key" in s.lower():
-        return "The API rejected the key. Check it in .env and restart the app."
+        return "The API key was rejected. Check it in the .env file and restart the app."
+    if "402" in s or "Insufficient Balance" in s:
+        return "The API account is out of credit."
+    if "404" in s or "model" in s.lower() and "not" in s.lower():
+        return "The model name in config/models.json wasn't recognised by the API."
     if "budget" in s.lower():
         return s
     if "Connection" in type(e).__name__ or "connect" in s.lower():
         return "Couldn't reach the model's API. Check the internet connection."
-    return f"{type(e).__name__}: {s[:240]}"
+    print(f"[api] {type(e).__name__}: {s[:500]}")
+    return "Something went wrong talking to the API. Details are in the terminal running the app."
 
 
 # --------------------------------------------------------------------------- #
@@ -273,7 +279,7 @@ def chat(body: ChatIn):
         stage, _ = split_stage(THOUGHT_RE.sub("", reply).strip())
         rec2 = M.load(body.learner_id)
         rec2["history"] += [{"role": "user", "content": msg, "t": time.time()},
-                            {"role": "assistant", "content": reply, "t": time.time(), "model": info["label"], "stage": stage}]
+                            {"role": "assistant", "content": reply, "t": time.time(), "stage": stage}]
         if stage:
             rec2["memory"]["stage"] = stage
         M.save(rec2)
