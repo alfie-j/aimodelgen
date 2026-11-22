@@ -1,13 +1,5 @@
 {
-  "_note": "Which backends the app offers is set by TEACHBOT_BACKENDS (comma-separated ids). Every reply in the UI is labelled with the backend that wrote it.",
-  "default_backends": "teachbot-hf,base-hf",
-  "history_turns": 8,
-  "backends": {
-    "teachbot-hf":  { "label": "Teach Bot", "detail": "Qwen2.5-14B-Instruct + our LoRA adapter (4-bit, this GPU)", "kind": "fine-tuned", "type": "hf", "adapter": true },
-    "base-hf":      { "label": "Base Qwen", "detail": "Qwen2.5-14B-Instruct, adapter switched off (same weights, no fine-tuning)", "kind": "base", "type": "hf", "adapter": false },
-    "teachbot-api": { "label": "Teach Bot", "detail": "Qwen2.5-14B-Instruct + our LoRA adapter (vLLM server)", "kind": "fine-tuned", "type": "api", "model": "teachbot" },
-    "base-api":     { "label": "Base Qwen", "detail": "Qwen2.5-14B-Instruct, no adapter (vLLM server)", "kind": "base", "type": "api", "model": "qwen-base" },
-    "teachbot-ollama": { "label": "Teach Bot", "detail": "merged Teach Bot GGUF on this laptop (Ollama)", "kind": "fine-tuned", "type": "api", "model": "teachbot-ollama" },
-    "kimi":         { "label": "Kimi K3", "detail": "the teacher model, via the Moonshot API", "kind": "teacher", "type": "api", "model": "kimi-k3" }
-  }
+  "_note": "The demo talks to one API model (set TEACHBOT_MODEL to any key in models.json; default below). TEACHBOT_TEST=1 runs a scripted backend for interface work.",
+  "model": "deepseek-v4-flash",
+  "history_turns": 10
 }

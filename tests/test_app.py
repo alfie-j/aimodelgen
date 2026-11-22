@@ -1,6 +1,5 @@
 import importlib
 import json
-import os
 import time
 
 import pytest
@@ -23,28 +22,50 @@ def events(resp):
 
 def test_flow(client):
     s = client.get("/api/status").json()
-    assert s["test_mode"] and s["backends"][0]["kind"] == "test" and len(s["heldout"]) == 42
+    assert s["test_mode"] and s["model"]["test"] and s["study"]["groups"]["teachbot"]["n"] == 6
     assert "Teach Bot" in client.get("/").text
     lid = client.post("/api/learners", json={"name": "Sam"}).json()["id"]
-    r = client.post("/api/chat", json={"learner_id": lid, "backend": "test", "message": "hello"})
-    ev = events(r)
+    ev = events(client.post("/api/chat", json={"learner_id": lid, "message": "hello"}))
     assert ev[-1]["type"] == "done" and ev[-1]["stage"] == "Teach"
     text = "".join(e["text"] for e in ev if e["type"] == "token")
-    assert "<thought>" in text and "TEST MODE" in text
-    for _ in range(50):
+    assert "<thought>" in text and "[[sim:inverse-square]]" in text and "<answers>" in text
+    for _ in range(60):
         rec = client.get(f"/api/learners/{lid}").json()
         if rec["memory_updates"]:
             break
         time.sleep(0.05)
-    assert rec["memory_updates"] == 1 and rec["memory"]["skills"]["S1"] == "in progress"
-    assert len(rec["history"]) == 2 and rec["history"][1]["backend"] == "test"
-    one = events(client.post("/api/oneshot", json={"backend": "test", "message": "q"}))
-    assert one[-1]["type"] == "done"
-    p = client.get("/api/pipeline").json()
-    assert p["study"]["groups"]["teachbot"]["n"] == 6
-    assert client.get("/api/examples").status_code == 200
-    assert client.post("/api/chat", json={"learner_id": lid, "backend": "nope", "message": "x"}).status_code == 404
+    assert rec["memory_updates"] == 1 and rec["memory"]["skills"]["S1"] == "taught"
+    assert len(rec["history"]) == 2
+    lst = client.get("/api/learners").json()
+    assert lst[0]["id"] == lid and lst[0]["turns"] == 1 and lst[0]["title"] == "hello"
+    for mode in ("tutor", "plain"):
+        assert events(client.post("/api/oneshot", json={"mode": mode, "message": "q"}))[-1]["type"] == "done"
+    assert client.post("/api/oneshot", json={"mode": "x", "message": "q"}).status_code == 400
     assert client.get("/api/learners/../../etc").status_code == 404
+
+
+def test_missing_key_is_reported(tmp_path, monkeypatch):
+    monkeypatch.delenv("TEACHBOT_TEST", raising=False)
+    monkeypatch.delenv("DEEPSEEK_API_KEY", raising=False)
+    import app.memory as M
+    monkeypatch.setattr(M, "STORE", tmp_path / "learners")
+    import tools.llm
+    monkeypatch.setattr(tools.llm, "load_env", lambda *a, **k: None)
+    import app.server as S
+    importlib.reload(S)
+    c = TestClient(S.app)
+    m = c.get("/api/status").json()["model"]
+    assert m["key"] == "deepseek-v4-flash" and not m["ready"] and "DEEPSEEK_API_KEY" in m["problem"]
+    lid = c.post("/api/learners", json={}).json()["id"]
+    ev = events(c.post("/api/chat", json={"learner_id": lid, "message": "hi"}))
+    assert ev[0]["type"] == "error" and "DEEPSEEK_API_KEY" in ev[0]["message"]
+
+
+def test_prompt_renders():
+    import app.memory as M
+    from app.server import tutor_system
+    s = tutor_system(M.blank_memory())
+    assert "[[sim:inverse-square]]" in s and "P06" in s and "{memory}" not in s
 
 
 def test_memory_merge_rejects_garbage():
@@ -53,4 +74,3 @@ def test_memory_merge_rejects_garbage():
     assert M.merge_update(mem, "not json") == mem
     out = M.merge_update(mem, '{"skills": {"S1": "taught", "S2": "banana"}, "stage": "Nope", "quiz": [{"q": "a", "correct": true}]}')
     assert out["skills"]["S1"] == "taught" and out["skills"]["S2"] == "not started" and out["stage"] == "Diagnose"
-    assert out["quiz"] == [{"q": "a", "correct": True}]

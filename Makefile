@@ -34,8 +34,8 @@ eval-judge:  ## 7+ same, plus blind judge model
 	$(PY) -m eval.run_eval --backend hf --judge
 study:       ## participant study summary
 	$(PY) -m study.analyse
-app:         ## tutor web app on :7860 (GPU)
-	TEACHBOT_BACKENDS=teachbot-hf,base-hf $(PY) -m uvicorn app.server:app --host 0.0.0.0 --port 7860
+app:         ## demo web app on :7860 (needs an API key in .env)
+	$(PY) -m uvicorn app.server:app --host 0.0.0.0 --port 7860
 app-test:    ## app with a scripted test backend, for UI work without a GPU
 	TEACHBOT_TEST=1 $(PY) -m uvicorn app.server:app --port 7860
 export:      ## merge + GGUF for running on a laptop with Ollama

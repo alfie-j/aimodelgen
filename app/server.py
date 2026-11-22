@@ -1,10 +1,14 @@
-"""Teach Bot web app.
+"""Teach Bot demo app.
 
-    TEACHBOT_BACKENDS=teachbot-hf,base-hf uvicorn app.server:app --host 0.0.0.0 --port 7860
+An example of what the project's tutor does, running on an API model with the
+Teach Bot prompt (prompts/tutor_v2.md). No fine-tuned model is involved.
 
-Tabs: Lesson (the tutor, with stages, its teaching plan and persistent memory),
-Base vs fine-tuned (same question to both, side by side), and How it was built
-(every number read live from the pipeline's output files).
+    python3 -m uvicorn app.server:app --port 7860
+    TEACHBOT_MODEL=kimi-k3 python3 -m uvicorn app.server:app --port 7860   # another model
+    TEACHBOT_TEST=1 python3 -m uvicorn app.server:app --port 7860          # scripted, no API
+
+Views: Lesson (the tutor, with stages, its plan, live simulators and memory),
+Compare (the Teach Bot prompt vs no prompt design, same model), How it works.
 """
 from __future__ import annotations
 
@@ -16,118 +20,150 @@ from pathlib import Path
 from typing import Iterator
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from app import memory as M
+from tools.llm import load_config, load_env
 from tools.materials import ROOT, prompt, render_problems, render_weights, topic_scope
 from tools.tags import THOUGHT_RE, split_stage
 
+load_env()
 CFG = json.loads((ROOT / "config" / "app.json").read_text())
+MODELS = load_config()
 STATIC = Path(__file__).with_name("static")
-OUT = ROOT / "outputs"
 TEST_MODE = os.environ.get("TEACHBOT_TEST") == "1"
+MODEL_KEY = os.environ.get("TEACHBOT_MODEL", CFG["model"])
+if MODEL_KEY not in MODELS["models"]:
+    raise SystemExit(f"TEACHBOT_MODEL={MODEL_KEY} is not in config/models.json")
 
 app = FastAPI(title="Teach Bot")
 app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
 
 # --------------------------------------------------------------------------- #
-# Backends
+# The model
 # --------------------------------------------------------------------------- #
-_hf = None
-_hf_lock = threading.Lock()
-
-
-def hf_student():
-    global _hf
-    with _hf_lock:
-        if _hf is None:
-            from tools.student import HFStudent
-
-            _hf = HFStudent()
-    return _hf
-
-
-class Backend:
-    def __init__(self, bid: str, spec: dict):
-        self.id, self.spec = bid, spec
-        self._api = None
+class Model:
+    def __init__(self, key: str):
+        self.key = key
+        self.spec = MODELS["models"][key]
+        self.provider = MODELS["providers"][self.spec["provider"]]
+        self._llm = None
 
     def info(self) -> dict:
-        return {"id": self.id, **{k: self.spec[k] for k in ("label", "detail", "kind")}}
+        if TEST_MODE:
+            return {"key": "test", "label": "Test backend", "provider": "none", "ready": True,
+                    "problem": None, "test": True}
+        env = self.provider["key_env"]
+        ready = bool(os.environ.get(env)) or bool(self.provider.get("no_key"))
+        return {"key": self.key, "label": self.spec.get("label", self.key), "provider": self.spec["provider"],
+                "model_id": self.spec["model"], "ready": ready, "test": False,
+                "problem": None if ready else f"No API key: set {env} in .env and restart."}
 
-    def stream(self, messages: list[dict], temperature: float = 0.7, max_new_tokens: int = 1100) -> Iterator[str]:
-        t = self.spec["type"]
-        if t == "hf":
-            yield from hf_student().stream(messages, adapter=self.spec["adapter"], temperature=temperature,
-                                           max_new_tokens=max_new_tokens)
-        elif t == "api":
-            if self._api is None:
-                from tools.student import APIStudent
+    def llm(self):
+        if self._llm is None:
+            from tools.llm import LLM
 
-                self._api = APIStudent(self.spec["model"])
-            yield from self._api.stream(messages, temperature=temperature, max_new_tokens=max_new_tokens)
-        elif t == "test":
+            self._llm = LLM(self.key, MODELS)
+        return self._llm
+
+    def stream(self, messages: list[dict], temperature: float = 0.6, max_tokens: int = 1600) -> Iterator[str]:
+        if TEST_MODE:
             yield from scripted_stream(messages)
-        else:
-            raise RuntimeError(f"unknown backend type {t}")
+            return
+        yield from self.llm().stream(messages, temperature=temperature, max_tokens=max_tokens, tag="app")
 
-    def generate(self, messages: list[dict], max_new_tokens: int = 500) -> str:
-        return "".join(self.stream(messages, temperature=0.0, max_new_tokens=max_new_tokens))
+    def generate(self, messages: list[dict], max_tokens: int = 600) -> str:
+        return "".join(self.stream(messages, temperature=0.0, max_tokens=max_tokens))
+
+
+MODEL = Model(MODEL_KEY)
+
+SCRIPTED = """[Stage: Teach]
+<thought>
+- Test mode: fixed text so the interface can be checked without an API.
+- Shows a plan, a formula, a simulator, a quiz and hidden answers.
+</thought>
+
+**This is fixed test text, not a model.** Picture a star's light spreading out over a sphere. The sphere's area is $4\\pi d^2$, so the light per square metre is
+
+$$F = \\frac{L}{4\\pi d^2}$$
+
+where $L$ is the luminosity and $d$ the distance. Ten times farther, the sphere has $10^2 = 100$ times the area, so each square gets $\\frac{1}{100}$ of the light. That is $2.5\\log_{10}100 = 5$ magnitudes fainter.
+
+[[sim:inverse-square]]
+
+Drag the slider to 3. How many times fainter is the star?
+
+**Quick check**
+1. A star moves 4 times farther away. What fraction of its light reaches each square?
+2. Is a star of magnitude 2 brighter or fainter than one of magnitude 1?
+
+<answers>
+1. $1/4^2 = 1/16$.
+2. Fainter: a larger magnitude means fainter.
+</answers>
+
+[[sim:distance-modulus]]
+"""
 
 
 def scripted_stream(messages: list[dict]) -> Iterator[str]:
-    """TEST MODE ONLY (TEACHBOT_TEST=1): fixed text for UI tests, labelled in the UI as not a model."""
+    """TEST MODE ONLY: fixed text for interface tests; the UI labels it as not a model."""
     last = messages[-1]["content"]
     if "You keep a tutor's notes" in last:
-        yield json.dumps({**M.blank_memory(), "summary": "TEST MODE: scripted memory, not written by a model.",
-                          "skills": {**M.blank_memory()["skills"], "S1": "in progress"}, "stage": "Teach"})
+        yield json.dumps({**M.blank_memory(), "summary": "Test mode: scripted notes, not written by a model.",
+                          "skills": {**M.blank_memory()["skills"], "S1": "taught", "S2": "in progress"},
+                          "misconceptions": ["ten times farther means ten times fainter"],
+                          "quiz": [{"q": "4x farther", "correct": True}], "stage": "Teach"})
         return
-    text = ("[Stage: Teach]\n<thought>\n- TEST MODE: scripted text, not model output.\n</thought>\n\n"
-            "**Test backend.** This is fixed text used to check the interface. Light spreads over a sphere of area "
-            "$4\\pi d^2$, so ten times farther gives $\\frac{1}{100}$ of the flux, which is $2.5\\log_{10}100 = 5$ "
-            "magnitudes.\n\nWhat happens at three times the distance?")
-    for i in range(0, len(text), 6):
-        time.sleep(0.01)
-        yield text[i:i + 6]
-
-
-def enabled_backends() -> dict[str, Backend]:
-    ids = [b.strip() for b in os.environ.get("TEACHBOT_BACKENDS", CFG["default_backends"]).split(",") if b.strip()]
-    out = {i: Backend(i, CFG["backends"][i]) for i in ids if i in CFG["backends"]}
-    if TEST_MODE:
-        out = {"test": Backend("test", {"label": "Test backend", "detail": "fixed text for interface tests, not a model",
-                                        "kind": "test", "type": "test"})}
-    return out
-
-
-BACKENDS = enabled_backends()
-
-
-def backend(bid: str) -> Backend:
-    if bid not in BACKENDS:
-        raise HTTPException(404, f"backend '{bid}' not enabled")
-    return BACKENDS[bid]
+    if "Help me with this" in last:  # the no-prompt-design condition in Compare
+        text = "**Fixed test text.** Brightness falls with distance squared, so ten times farther is a hundred times fainter."
+    else:
+        text = SCRIPTED
+    for i in range(0, len(text), 8):
+        time.sleep(0.006)
+        yield text[i:i + 8]
 
 
 # --------------------------------------------------------------------------- #
 # Prompts
 # --------------------------------------------------------------------------- #
 def tutor_system(mem: dict) -> str:
-    return prompt("system_prompt_v1.md").format(topic_scope=topic_scope(), exam_weights=render_weights(),
-                                                problems=render_problems(), memory=M.render(mem))
+    return prompt("tutor_v2.md").format(topic_scope=topic_scope(), exam_weights=render_weights(),
+                                        problems=render_problems(), memory=M.render(mem))
+
+
+def plain_messages(question: str) -> list[dict]:
+    lazy = prompt("lazy_baseline.md").format(topic_scope=topic_scope(), problems=render_problems())
+    return [{"role": "user", "content": lazy + "\n\n" + question}]
 
 
 def history_messages(rec: dict, n_turns: int) -> list[dict]:
-    """Last n turns only; the persistent memory carries everything older. Plans are not resent."""
+    """Last n turns only; the saved memory carries everything older. Plans are not resent."""
     hist = rec["history"][-2 * n_turns:]
     return [{"role": h["role"], "content": THOUGHT_RE.sub("", h["content"]).strip()} for h in hist]
 
 
 def sse(obj: dict) -> str:
     return f"data: {json.dumps(obj, ensure_ascii=False)}\n\n"
+
+
+def stream_response(gen) -> StreamingResponse:
+    return StreamingResponse(gen, media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+def friendly(e: Exception) -> str:
+    s = str(e)
+    if "401" in s or "Authentication" in s or "api key" in s.lower():
+        return "The API rejected the key. Check it in .env and restart the app."
+    if "budget" in s.lower():
+        return s
+    if "Connection" in type(e).__name__ or "connect" in s.lower():
+        return "Couldn't reach the model's API. Check the internet connection."
+    return f"{type(e).__name__}: {s[:240]}"
 
 
 # --------------------------------------------------------------------------- #
@@ -139,14 +175,12 @@ class NewLearner(BaseModel):
 
 class ChatIn(BaseModel):
     learner_id: str
-    backend: str
     message: str
 
 
 class OneShotIn(BaseModel):
-    backend: str
+    mode: str  # "tutor" or "plain"
     message: str
-    temperature: float = 0.0
 
 
 @app.get("/")
@@ -156,9 +190,23 @@ def index():
 
 @app.get("/api/status")
 def status():
-    adapter = OUT / "adapter" / "adapter_config.json"
-    return {"backends": [b.info() for b in BACKENDS.values()], "test_mode": TEST_MODE,
-            "adapter_present": adapter.exists(), "heldout": _load_jsonl(ROOT / "eval" / "heldout.jsonl")}
+    return {"model": MODEL.info(), "test_mode": TEST_MODE,
+            "study": json.loads((ROOT / "data" / "study_summary.json").read_text())}
+
+
+@app.get("/api/learners")
+def list_learners():
+    out = []
+    if M.STORE.exists():
+        for p in M.STORE.glob("*.json"):
+            try:
+                r = json.loads(p.read_text())
+            except json.JSONDecodeError:
+                continue
+            first = next((h["content"] for h in r["history"] if h["role"] == "user"), "")
+            out.append({"id": r["id"], "name": r["name"], "created": r["created"], "turns": len(r["history"]) // 2,
+                        "title": first[:60], "updated": r["history"][-1]["t"] if r["history"] else 0})
+    return sorted(out, key=lambda x: x["updated"], reverse=True)[:30]
 
 
 @app.post("/api/learners")
@@ -183,11 +231,11 @@ def delete_learner(lid: str):
     return {"ok": True}
 
 
-def _update_memory(lid: str, b: Backend, student: str, tutor: str) -> None:
+def _update_memory(lid: str, student: str, tutor: str) -> None:
     try:
         rec = M.load(lid)
-        text = b.generate(M.update_prompt(rec["memory"], student, THOUGHT_RE.sub("", tutor)), max_new_tokens=500)
-        rec = M.load(lid)  # reload: the learner may have sent another message meanwhile
+        text = MODEL.generate(M.update_prompt(rec["memory"], student, THOUGHT_RE.sub("", tutor)), max_tokens=600)
+        rec = M.load(lid)
         rec["memory"] = M.merge_update(rec["memory"], text)
         rec["memory_updates"] = rec.get("memory_updates", 0) + 1
         M.save(rec)
@@ -197,7 +245,6 @@ def _update_memory(lid: str, b: Backend, student: str, tutor: str) -> None:
 
 @app.post("/api/chat")
 def chat(body: ChatIn):
-    b = backend(body.backend)
     try:
         rec = M.load(body.learner_id)
     except (FileNotFoundError, ValueError):
@@ -205,125 +252,61 @@ def chat(body: ChatIn):
     msg = body.message.strip()[:4000]
     if not msg:
         raise HTTPException(400, "empty message")
+    info = MODEL.info()
     messages = [{"role": "system", "content": tutor_system(rec["memory"])}, *history_messages(rec, CFG["history_turns"]),
                 {"role": "user", "content": msg}]
 
     def gen():
+        if info["problem"]:
+            yield sse({"type": "error", "message": info["problem"]})
+            return
         parts: list[str] = []
         t0 = time.time()
         try:
-            for piece in b.stream(messages):
+            for piece in MODEL.stream(messages):
                 parts.append(piece)
                 yield sse({"type": "token", "text": piece})
         except Exception as e:
-            yield sse({"type": "error", "message": f"{type(e).__name__}: {str(e)[:300]}"})
+            yield sse({"type": "error", "message": friendly(e)})
             return
         reply = "".join(parts)
         stage, _ = split_stage(THOUGHT_RE.sub("", reply).strip())
         rec2 = M.load(body.learner_id)
         rec2["history"] += [{"role": "user", "content": msg, "t": time.time()},
-                            {"role": "assistant", "content": reply, "t": time.time(), "backend": b.id, "stage": stage}]
+                            {"role": "assistant", "content": reply, "t": time.time(), "model": info["label"], "stage": stage}]
         if stage:
             rec2["memory"]["stage"] = stage
         M.save(rec2)
-        yield sse({"type": "done", "stage": stage, "seconds": round(time.time() - t0, 1), "backend": b.info()})
-        threading.Thread(target=_update_memory, args=(body.learner_id, b, msg, reply), daemon=True).start()
+        yield sse({"type": "done", "stage": stage, "seconds": round(time.time() - t0, 1)})
+        threading.Thread(target=_update_memory, args=(body.learner_id, msg, reply), daemon=True).start()
 
-    return StreamingResponse(gen(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+    return stream_response(gen())
 
 
 @app.post("/api/oneshot")
 def oneshot(body: OneShotIn):
-    """For the side-by-side view: the student system prompt the model was trained with, no memory."""
-    b = backend(body.backend)
-    messages = [{"role": "system", "content": prompt("student_system.md").strip()},
-                {"role": "user", "content": body.message.strip()[:4000]}]
+    """Compare view: the same model with the Teach Bot prompt, or with no prompt design."""
+    q = body.message.strip()[:4000]
+    if body.mode == "tutor":
+        messages = [{"role": "system", "content": tutor_system(M.blank_memory())},
+                    {"role": "user", "content": q + "\n\n(Answer this one question directly as a Teach stage lesson.)"}]
+    elif body.mode == "plain":
+        messages = plain_messages(q)
+    else:
+        raise HTTPException(400, "mode must be tutor or plain")
+    info = MODEL.info()
 
     def gen():
-        t0, n = time.time(), 0
+        if info["problem"]:
+            yield sse({"type": "error", "message": info["problem"]})
+            return
+        t0 = time.time()
         try:
-            for piece in b.stream(messages, temperature=body.temperature):
-                n += 1
+            for piece in MODEL.stream(messages, temperature=0.3):
                 yield sse({"type": "token", "text": piece})
         except Exception as e:
-            yield sse({"type": "error", "message": f"{type(e).__name__}: {str(e)[:300]}"})
+            yield sse({"type": "error", "message": friendly(e)})
             return
-        yield sse({"type": "done", "seconds": round(time.time() - t0, 1), "chunks": n, "backend": b.info()})
+        yield sse({"type": "done", "seconds": round(time.time() - t0, 1)})
 
-    return StreamingResponse(gen(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
-
-
-# --------------------------------------------------------------------------- #
-# "How it was built": everything read from the pipeline's own output files
-# --------------------------------------------------------------------------- #
-def _load_json(p: Path):
-    try:
-        return json.loads(p.read_text())
-    except (FileNotFoundError, json.JSONDecodeError):
-        return None
-
-
-def _load_jsonl(p: Path, limit: int | None = None) -> list:
-    if not p.exists():
-        return []
-    rows = []
-    for line in p.read_text().splitlines():
-        if line.strip():
-            try:
-                rows.append(json.loads(line))
-            except json.JSONDecodeError:
-                continue
-        if limit and len(rows) >= limit:
-            break
-    return rows
-
-
-def _spend() -> dict:
-    out: dict = {}
-    for r in _load_jsonl(OUT / "spend.jsonl"):
-        k = f"{r['model']}:{r.get('tag', '')}"
-        o = out.setdefault(k, {"calls": 0, "tokens_in": 0, "tokens_out": 0, "cost_usd": 0.0})
-        o["calls"] += 1
-        o["tokens_in"] += r["tokens_in"]
-        o["tokens_out"] += r["tokens_out"]
-        o["cost_usd"] = round(o["cost_usd"] + r["cost_usd"], 4)
-    return out
-
-
-@app.get("/api/pipeline")
-def pipeline():
-    data = OUT / "data"
-    metrics = _load_jsonl(OUT / "adapter" / "metrics.jsonl")
-    loss = [{"step": m["step"], "epoch": m.get("epoch"), "loss": m["loss"]} for m in metrics if "loss" in m]
-    eval_loss = [{"step": m["step"], "epoch": m.get("epoch"), "loss": m["eval_loss"]} for m in metrics if "eval_loss" in m]
-    return JSONResponse({
-        "compare": _load_json(OUT / "compare" / "summary.json"),
-        "compare_runs": len(_load_jsonl(OUT / "compare" / "raw.jsonl")),
-        "seeds": len(_load_jsonl(data / "seeds.jsonl")),
-        "generated": len(_load_jsonl(data / "raw.jsonl")),
-        "filter": _load_json(data / "filter_report.json"),
-        "reviewed": len(_load_jsonl(data / "review_decisions.jsonl")),
-        "dataset": _load_json(data / "dataset_card.json"),
-        "run_card": _load_json(OUT / "adapter" / "run_card.json"),
-        "loss": loss,
-        "eval_loss": eval_loss,
-        "eval": _load_json(OUT / "eval" / "report.json"),
-        "study": _load_json(ROOT / "data" / "study_summary.json"),
-        "spend": _spend(),
-    })
-
-
-@app.get("/api/examples")
-def examples():
-    """A few real records from each stage of the filter, for the walkthrough."""
-    data = OUT / "data"
-    kept = _load_jsonl(data / "filtered.jsonl", 3)
-    rejected_all = _load_jsonl(data / "rejected.jsonl")
-    by_gate: dict[str, dict] = {}
-    for r in rejected_all:
-        g = r.get("filter", {}).get("gate", "?")
-        by_gate.setdefault(g, r)
-    slim = lambda r: {"gen_id": r.get("gen_id"), "skill": r.get("skill_id"), "learner": r.get("learner_message"),
-                      "plan": r.get("plan"), "explanation": r.get("explanation"), "checks": r.get("checks"),
-                      "filter": r.get("filter")}
-    return {"kept": [slim(r) for r in kept], "rejected": [slim(r) for r in by_gate.values()]}
+    return stream_response(gen())

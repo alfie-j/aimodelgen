@@ -45,7 +45,8 @@
       "price_in": null,
       "price_out": null,
       "temperature": 0.7,
-      "max_tokens": 4096
+      "max_tokens": 4096,
+      "label": "Kimi K3"
     },
     "deepseek-v4-pro": {
       "provider": "deepseek",
@@ -53,7 +54,8 @@
       "role": "candidate",
       "price_in": null,
       "price_out": null,
-      "max_tokens": 4096
+      "max_tokens": 4096,
+      "label": "DeepSeek V4 Pro"
     },
     "deepseek-v4-flash": {
       "provider": "deepseek",
@@ -62,13 +64,14 @@
       "price_in": 0.14,
       "price_out": 0.28,
       "temperature": 0.7,
-      "max_tokens": 4096,
+      "max_tokens": 2048,
       "_thinking": "thinking mode disabled so temperature works; set the provider's documented switch here",
       "extra_body": {
         "thinking": {
           "type": "disabled"
         }
-      }
+      },
+      "label": "DeepSeek V4 Flash"
     },
     "openrouter-fast": {
       "provider": "openrouter",
@@ -76,7 +79,8 @@
       "role": "candidate (fast tier)",
       "price_in": null,
       "price_out": null,
-      "max_tokens": 4096
+      "max_tokens": 4096,
+      "label": "OpenRouter model"
     },
     "google-flash": {
       "provider": "google",
@@ -84,7 +88,8 @@
       "role": "candidate (fast tier)",
       "price_in": null,
       "price_out": null,
-      "max_tokens": 4096
+      "max_tokens": 4096,
+      "label": "Gemini Flash"
     },
     "qwen-base": {
       "provider": "local",
@@ -92,7 +97,8 @@
       "role": "student before fine-tuning (vLLM)",
       "price_in": 0,
       "price_out": 0,
-      "max_tokens": 2048
+      "max_tokens": 2048,
+      "label": "Qwen2.5-14B (base)"
     },
     "teachbot": {
       "provider": "local",
@@ -100,7 +106,8 @@
       "role": "student after fine-tuning (vLLM LoRA module)",
       "price_in": 0,
       "price_out": 0,
-      "max_tokens": 2048
+      "max_tokens": 2048,
+      "label": "Teach Bot adapter"
     },
     "teachbot-ollama": {
       "provider": "ollama",
@@ -108,7 +115,8 @@
       "role": "student after fine-tuning (laptop GGUF)",
       "price_in": 0,
       "price_out": 0,
-      "max_tokens": 2048
+      "max_tokens": 2048,
+      "label": "Teach Bot (Ollama)"
     }
   },
   "roles": {
@@ -120,6 +128,7 @@
       "deepseek-v4-flash",
       "openrouter-fast",
       "google-flash"
-    ]
+    ],
+    "demo": "deepseek-v4-flash"
   }
 }
