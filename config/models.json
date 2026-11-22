@@ -1,0 +1,125 @@
+{
+  "_note": "USD per 1M tokens. Prices and model IDs move: confirm IDs with `python -m tools.llm models <provider>` and prices on each provider's pricing page before a big run. A null price means spend is tracked in tokens only.",
+  "prices_checked": "VERIFY (original kit: 2026-10-12)",
+  "budget_usd": {
+    "deepseek": 4,
+    "moonshot": 6,
+    "openrouter": 3,
+    "google": 1
+  },
+  "providers": {
+    "moonshot": {
+      "base_url": "https://api.moonshot.ai/v1",
+      "key_env": "MOONSHOT_API_KEY"
+    },
+    "deepseek": {
+      "base_url": "https://api.deepseek.com/v1",
+      "key_env": "DEEPSEEK_API_KEY"
+    },
+    "openrouter": {
+      "base_url": "https://openrouter.ai/api/v1",
+      "key_env": "OPENROUTER_API_KEY"
+    },
+    "google": {
+      "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
+      "key_env": "GOOGLE_API_KEY"
+    },
+    "local": {
+      "base_url": "http://localhost:8000/v1",
+      "key_env": "LOCAL_API_KEY",
+      "no_key": true,
+      "timeout": 600
+    },
+    "ollama": {
+      "base_url": "http://localhost:11434/v1",
+      "key_env": "OLLAMA_API_KEY",
+      "no_key": true,
+      "timeout": 600
+    }
+  },
+  "models": {
+    "kimi-k3": {
+      "provider": "moonshot",
+      "model": "kimi-k3",
+      "role": "teacher",
+      "price_in": null,
+      "price_out": null,
+      "temperature": 0.7,
+      "max_tokens": 4096
+    },
+    "deepseek-v4-pro": {
+      "provider": "deepseek",
+      "model": "deepseek-v4-pro",
+      "role": "candidate",
+      "price_in": null,
+      "price_out": null,
+      "max_tokens": 4096
+    },
+    "deepseek-v4-flash": {
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "role": "candidate (cheap tier) and judge",
+      "price_in": 0.14,
+      "price_out": 0.28,
+      "temperature": 0.7,
+      "max_tokens": 4096,
+      "_thinking": "thinking mode disabled so temperature works; set the provider's documented switch here",
+      "extra_body": {
+        "thinking": {
+          "type": "disabled"
+        }
+      }
+    },
+    "openrouter-fast": {
+      "provider": "openrouter",
+      "model": "SET-ME/fast-model-id",
+      "role": "candidate (fast tier)",
+      "price_in": null,
+      "price_out": null,
+      "max_tokens": 4096
+    },
+    "google-flash": {
+      "provider": "google",
+      "model": "SET-ME-gemini-flash-id",
+      "role": "candidate (fast tier)",
+      "price_in": null,
+      "price_out": null,
+      "max_tokens": 4096
+    },
+    "qwen-base": {
+      "provider": "local",
+      "model": "Qwen/Qwen2.5-14B-Instruct",
+      "role": "student before fine-tuning (vLLM)",
+      "price_in": 0,
+      "price_out": 0,
+      "max_tokens": 2048
+    },
+    "teachbot": {
+      "provider": "local",
+      "model": "teachbot",
+      "role": "student after fine-tuning (vLLM LoRA module)",
+      "price_in": 0,
+      "price_out": 0,
+      "max_tokens": 2048
+    },
+    "teachbot-ollama": {
+      "provider": "ollama",
+      "model": "teachbot",
+      "role": "student after fine-tuning (laptop GGUF)",
+      "price_in": 0,
+      "price_out": 0,
+      "max_tokens": 2048
+    }
+  },
+  "roles": {
+    "teacher": "kimi-k3",
+    "judge": "deepseek-v4-flash",
+    "compare": [
+      "kimi-k3",
+      "deepseek-v4-pro",
+      "deepseek-v4-flash",
+      "openrouter-fast",
+      "google-flash"
+    ]
+  }
+}

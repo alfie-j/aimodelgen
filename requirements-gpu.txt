@@ -1,0 +1,9 @@
+torch>=2.3
+transformers>=4.45
+peft>=0.12
+accelerate>=0.33
+bitsandbytes>=0.43
+huggingface_hub>=0.24
+sentencepiece
+# optional, for serving base + adapter side by side on a 48 GB card:
+# vllm>=0.6

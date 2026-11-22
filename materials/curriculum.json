@@ -1,0 +1,151 @@
+{
+  "skills": {
+    "S1": {
+      "name": "Inverse-square law and flux",
+      "concepts": [
+        "why light per unit area falls with the square of distance",
+        "the difference between luminosity and flux",
+        "comparing the flux of the same star at two distances",
+        "comparing two stars of different luminosity at different distances",
+        "why a sphere's area is the key to the inverse-square law"
+      ],
+      "misconceptions": [
+        "ten times farther means ten times fainter",
+        "a star's luminosity changes when you move away from it",
+        "light gets 'used up' or tired as it travels through empty space",
+        "flux and luminosity are the same thing"
+      ]
+    },
+    "S2": {
+      "name": "The magnitude scale",
+      "concepts": [
+        "why the magnitude scale runs backwards",
+        "why 5 magnitudes is exactly a factor of 100",
+        "how big one magnitude step is as a brightness factor",
+        "what negative magnitudes mean",
+        "where the naked-eye limit sits on the magnitude scale"
+      ],
+      "misconceptions": [
+        "a larger magnitude means a brighter star",
+        "the scale is linear, so a 2nd-magnitude star is half as bright as a 1st",
+        "magnitudes cannot be negative",
+        "one magnitude is a factor of 10 in brightness"
+      ]
+    },
+    "S3": {
+      "name": "Magnitude differences and flux ratios",
+      "concepts": [
+        "turning a magnitude difference into a brightness ratio",
+        "turning a brightness ratio into a magnitude difference",
+        "the combined magnitude of two identical stars",
+        "the combined magnitude of several different stars",
+        "using logarithms with the Pogson relation"
+      ],
+      "misconceptions": [
+        "you can add magnitudes of two stars to get their combined magnitude",
+        "the minus sign in the Pogson relation does not matter",
+        "doubling the brightness halves the magnitude",
+        "a magnitude difference of 1 means one star is 1 times brighter"
+      ]
+    },
+    "S4": {
+      "name": "Absolute magnitude and the distance modulus",
+      "concepts": [
+        "what absolute magnitude means and why 10 parsecs",
+        "deriving the distance modulus from the inverse-square law",
+        "finding a distance from apparent and absolute magnitude",
+        "finding an apparent magnitude from absolute magnitude and distance",
+        "why the distance modulus is zero at 10 parsecs"
+      ],
+      "misconceptions": [
+        "absolute magnitude is how bright a star looks from Earth",
+        "the distance modulus is 5 log d with d in light-years",
+        "a star closer than 10 pc has a negative absolute magnitude",
+        "apparent and absolute magnitude are related linearly by distance"
+      ]
+    },
+    "S5": {
+      "name": "Parallax and distance units",
+      "concepts": [
+        "what parallax is, using your thumb at arm's length",
+        "why a parsec is defined from parallax",
+        "converting parallax in milliarcseconds to parsecs",
+        "converting between parsecs, light-years and AU",
+        "combining parallax with the distance modulus"
+      ],
+      "misconceptions": [
+        "a bigger parallax means a more distant star",
+        "a parsec is a unit of time",
+        "parallax in milliarcseconds can be used directly in d = 1/p",
+        "light-years can go straight into the distance modulus"
+      ]
+    },
+    "S6": {
+      "name": "Extinction and luminosity",
+      "concepts": [
+        "how interstellar dust dims starlight",
+        "adding extinction to the distance modulus",
+        "how ignoring extinction overestimates distance",
+        "comparing luminosities from absolute magnitudes",
+        "the Sun's absolute magnitude as a reference for luminosity"
+      ],
+      "misconceptions": [
+        "extinction makes a star look closer than it is",
+        "extinction is subtracted from the apparent magnitude on the wrong side",
+        "a star with absolute magnitude 0 has zero luminosity",
+        "a 5 magnitude difference in absolute magnitude means 5 times the luminosity"
+      ]
+    }
+  },
+  "personas": [
+    "a 16-year-old who has never taken physics and is nervous about logarithms",
+    "a first-year student who knows algebra but no astronomy",
+    "an olympiad beginner who has memorised formulas without understanding them",
+    "a learner who likes pictures and gets lost in symbols",
+    "a student who just got a homework problem wrong and wants to know why",
+    "an adult learner who enjoys stargazing but has no maths since school"
+  ],
+  "requests": {
+    "explain": [
+      "Can you explain {concept}? I don't really get it.",
+      "I keep hearing about {concept}. What's the idea, simply?",
+      "My notes say something about {concept}, but they skip the intuition. Help?",
+      "Before my olympiad training session I want to understand {concept}. Where do I start?"
+    ],
+    "misconception": [
+      "I think {misconception}. Is that right?",
+      "My friend told me {misconception}, and it sounds sensible to me. Is it true?",
+      "I wrote in my answer that {misconception} and lost marks. Why is it wrong?"
+    ],
+    "problem": [
+      "Can you walk me through this? {problem}",
+      "I'm stuck on this practice question: {problem}",
+      "How would I solve this, step by step? {problem}"
+    ]
+  },
+  "problem_templates": {
+    "S1": [
+      "A lamp is moved from {a} m to {b} m away from a light meter. By what factor does the reading change?",
+      "Star A is {k} times farther from us than star B but has the same luminosity. How do their fluxes compare?"
+    ],
+    "S2": [
+      "One star has magnitude {m1} and another has magnitude {m2}. Which looks brighter, and by roughly what factor?"
+    ],
+    "S3": [
+      "Two stars differ by {dm} magnitudes. What is the ratio of their brightness?",
+      "A binary star has two components of magnitude {m1} and {m2}. What is the combined magnitude?"
+    ],
+    "S4": [
+      "A star has apparent magnitude {m} and absolute magnitude {M}. How far away is it in parsecs?",
+      "A star with absolute magnitude {M} is {d} pc away. What is its apparent magnitude?"
+    ],
+    "S5": [
+      "A star has a parallax of {p} arcseconds. How far away is it in parsecs and in light-years?",
+      "A star has a parallax of {pmas} milliarcseconds and apparent magnitude {m}. What is its absolute magnitude?"
+    ],
+    "S6": [
+      "A star has m = {m} and M = {M}, and dust dims it by {A} magnitudes. How far away is it?",
+      "Star X has absolute magnitude {M1} and star Y has absolute magnitude {M2}. How many times more luminous is the brighter one?"
+    ]
+  }
+}

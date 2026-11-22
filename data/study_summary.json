@@ -1,0 +1,22 @@
+{
+  "_source": "Teach Bot Revised Video Dossier, 12 Nov 2026 (group averages; the per-participant sheet was lost). Scores out of 5.",
+  "test_items": 5,
+  "groups": {
+    "teachbot": { "label": "Teach Bot", "n": 6, "pre": 1.67, "post": 5.00, "recall": 4.17,
+                  "study_min_mean": 40.0, "study_min_median": 40,
+                  "post_scores": [5, 5, 5, 5, 5, 5], "recall_scores": [5, 4, 4, 4, 4, 4] },
+    "no_ai":    { "label": "No AI", "n": 9, "pre": 1.78, "post": 3.44, "recall": 3.11,
+                  "study_min_mean": 168.9, "study_min_median": 160, "study_min_range": [120, 280] },
+    "pilot":    { "label": "Pilot (kept separate)", "n": 3, "pre": 1.33, "post": 2.67, "recall": 4.00,
+                  "study_min_mean": 20.0, "study_min_median": 20,
+                  "note": "one large immediate improvement, one no immediate improvement, one lower immediate score" }
+  },
+  "limits": [
+    "small, unequal groups (6 vs 9)",
+    "random assignment cannot be shown",
+    "study time was not matched",
+    "post-test ceiling: all six Teach Bot participants scored 5/5",
+    "the recall interval was not recorded",
+    "a description of a small study, not proof the tutor caused the difference"
+  ]
+}
