@@ -26,7 +26,7 @@ def load_env(path: Path = ROOT / ".env") -> None:
     """Minimal .env loader so no extra dependency is needed."""
     if not path.exists():
         return
-    for line in path.read_text().splitlines():
+    for line in path.read_text(encoding="utf-8").splitlines():
         line = line.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
@@ -35,7 +35,7 @@ def load_env(path: Path = ROOT / ".env") -> None:
 
 
 def load_config() -> dict[str, Any]:
-    return json.loads(CONFIG.read_text())
+    return json.loads(CONFIG.read_text(encoding="utf-8"))
 
 
 class BudgetExceeded(RuntimeError):
@@ -56,7 +56,7 @@ class Reply:
 def spent_by_provider() -> dict[str, float]:
     totals: dict[str, float] = {}
     if SPEND_LOG.exists():
-        for line in SPEND_LOG.read_text().splitlines():
+        for line in SPEND_LOG.read_text(encoding="utf-8").splitlines():
             try:
                 row = json.loads(line)
             except json.JSONDecodeError:
@@ -107,7 +107,7 @@ class LLM:
             "cost_usd": round(reply.cost_usd, 6),
             "priced": self.spec.get("price_in") is not None,
         }
-        with _lock, SPEND_LOG.open("a") as f:
+        with _lock, SPEND_LOG.open("a", encoding="utf-8") as f:
             f.write(json.dumps(row) + "\n")
 
     def _kwargs(self, temperature: float | None, max_tokens: int | None) -> dict[str, Any]:

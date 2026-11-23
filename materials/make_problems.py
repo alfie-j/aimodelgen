@@ -40,7 +40,7 @@ problems = [
   f"The farther one is 16 times more luminous: Delta M = 2.5 log 16 = {r(-P.delta_mag_from_flux_ratio(16))} mag"),
 ]
 out = Path(__file__).with_name("problems.jsonl")
-with out.open("w") as f:
+with out.open("w", encoding="utf-8") as f:
     for pid, skills, q, a in problems:
         f.write(json.dumps({"id": pid, "skills": skills, "question": q, "worked_answer": a,
                             "source": "practice problem written for the rebuild"}) + "\n")

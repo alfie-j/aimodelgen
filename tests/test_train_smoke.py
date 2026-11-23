@@ -38,18 +38,18 @@ def test_train_runs(tmp_path):
     from tests.tiny_model import build
     rows = lines(24)
     d = build(tmp_path / "tiny", [t["value"] for r in rows for t in r["conversations"]])
-    (tmp_path / "train.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows[:20]))
-    (tmp_path / "val.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows[20:]))
+    (tmp_path / "train.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows[:20]), encoding="utf-8")
+    (tmp_path / "val.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows[20:]), encoding="utf-8")
     out = tmp_path / "adapter"
     cmd = [sys.executable, "-m", "train.train_qlora", "--base", str(d), "--train", str(tmp_path / "train.jsonl"),
            "--val", str(tmp_path / "val.jsonl"), "--out", str(out), "--no-4bit", "--max-steps", "6",
            "--effective-batch", "4", "--per-device-batch", "2", "--rank", "8", "--alpha", "16", "--lr", "1e-3"]
-    r = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, timeout=600)
+    r = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, encoding="utf-8", timeout=600)
     assert r.returncode == 0, r.stderr[-3000:]
-    card = json.loads((out / "run_card.json").read_text())
+    card = json.loads((out / "run_card.json").read_text(encoding="utf-8"))
     assert card["steps"] == 6 and card["schedule"]["effective_batch"] == 4 and card["lora"]["r"] == 8
     assert (out / "adapter_config.json").exists()
-    m = [json.loads(l) for l in (out / "metrics.jsonl").read_text().splitlines()]
+    m = [json.loads(l) for l in (out / "metrics.jsonl").read_text(encoding="utf-8").splitlines()]
     losses = [x["loss"] for x in m if "loss" in x]
     assert len(losses) >= 5 and losses[-1] < losses[0]
 

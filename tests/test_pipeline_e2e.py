@@ -57,25 +57,25 @@ def test_e2e(tmpdata, monkeypatch):
     import pipeline.make_seeds as ms
 
     monkeypatch.setattr(sys, "argv", ["x", "--n", "40"]); ms.main()
-    seeds = [json.loads(l) for l in (tmpdata / "seeds.jsonl").read_text().splitlines()]
+    seeds = [json.loads(l) for l in (tmpdata / "seeds.jsonl").read_text(encoding="utf-8").splitlines()]
     assert len(seeds) == 40 and {s["kind"] for s in seeds} == {"explain", "misconception", "problem"}
     monkeypatch.setattr(sys, "argv", ["x", "--workers", "1"]); gen.main()
     monkeypatch.setattr(sys, "argv", ["x", "--workers", "1"]); gen.main()  # resumable: nothing new
-    assert len((tmpdata / "raw.jsonl").read_text().splitlines()) == 40
+    assert len((tmpdata / "raw.jsonl").read_text(encoding="utf-8").splitlines()) == 40
     monkeypatch.setattr(sys, "argv", ["x"]); fl.main()
-    rep = json.loads((tmpdata / "filter_report.json").read_text())
+    rep = json.loads((tmpdata / "filter_report.json").read_text(encoding="utf-8"))
     assert rep["kept_automatically"] == 10 and rep["awaiting_review"] == 10 and rep["rejected"] == 20
     assert rep["by_gate"]["numbers"]["rejected"] == 10 and rep["by_gate"]["format"]["rejected"] == 10
     # a reviewer accepts 3 queued items and rejects one auto-kept item on spot check
-    q = [json.loads(l) for l in (tmpdata / "review_queue.jsonl").read_text().splitlines()]
-    k = [json.loads(l) for l in (tmpdata / "filtered.jsonl").read_text().splitlines()]
-    with (tmpdata / "review_decisions.jsonl").open("w") as f:
+    q = [json.loads(l) for l in (tmpdata / "review_queue.jsonl").read_text(encoding="utf-8").splitlines()]
+    k = [json.loads(l) for l in (tmpdata / "filtered.jsonl").read_text(encoding="utf-8").splitlines()]
+    with (tmpdata / "review_decisions.jsonl").open("w", encoding="utf-8") as f:
         for r in q[:3]:
             f.write(json.dumps({"gen_id": r["gen_id"], "decision": "accept"}) + "\n")
         f.write(json.dumps({"gen_id": k[0]["gen_id"], "decision": "reject"}) + "\n")
     monkeypatch.setattr(sys, "argv", ["x"]); bd.main()
-    card = json.loads((tmpdata / "dataset_card.json").read_text())
+    card = json.loads((tmpdata / "dataset_card.json").read_text(encoding="utf-8"))
     assert card["auto_kept"] == 9 and card["accepted_after_review"] == 3
-    line = json.loads((tmpdata / "train.jsonl").read_text().splitlines()[0])
+    line = json.loads((tmpdata / "train.jsonl").read_text(encoding="utf-8").splitlines()[0])
     roles = [t["from"] for t in line["conversations"]]
     assert roles == ["system", "human", "gpt"] and line["conversations"][2]["value"].startswith("<thought>")

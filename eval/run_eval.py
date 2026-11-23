@@ -187,7 +187,7 @@ def write_markdown(rep: dict, path: Path) -> None:
         L.append(f"Blind judge preferred {A} {jp['a']}×, {B} {jp['b']}×, tie {jp['tie']}× (order randomised per question).")
     L += ["", "Limits: one held-out set of templated questions; an automatic judge is not a learner; "
               "this measures answers, not learning gains in people."]
-    path.write_text("\n".join(L) + "\n")
+    path.write_text("\n".join(L) + "\n", encoding="utf-8")
 
 
 def main() -> None:
@@ -201,7 +201,7 @@ def main() -> None:
     ap.add_argument("--max-new-tokens", type=int, default=900)
     args = ap.parse_args()
 
-    qs = [json.loads(l) for l in HELDOUT.read_text().splitlines() if l.strip()]
+    qs = [json.loads(l) for l in HELDOUT.read_text(encoding="utf-8").splitlines() if l.strip()]
     if args.limit:
         qs = qs[: args.limit]
     system = prompt("student_system.md").strip()
@@ -243,10 +243,10 @@ def main() -> None:
 
     rep = summarise(rows, names)
     rep["finished"] = time.strftime("%Y-%m-%d %H:%M")
-    (OUT / "answers.jsonl").write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows))
-    (OUT / "report.json").write_text(json.dumps(rep, indent=2))
+    (OUT / "answers.jsonl").write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), encoding="utf-8")
+    (OUT / "report.json").write_text(json.dumps(rep, indent=2), encoding="utf-8")
     write_markdown(rep, OUT / "report.md")
-    print((OUT / "report.md").read_text())
+    print((OUT / "report.md").read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

@@ -75,7 +75,7 @@ def test_static_files_never_name_the_model():
     from pathlib import Path
     static = Path(__file__).resolve().parent.parent / "app" / "static"
     for f in list(static.glob("*.html")) + list(static.glob("*.js")) + list(static.glob("*.css")):
-        t = f.read_text().lower()
+        t = f.read_text(encoding="utf-8").lower()
         assert "deepseek" not in t and "kimi" not in t.replace("kimi k3", ""), f.name
 
 

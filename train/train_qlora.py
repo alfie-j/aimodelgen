@@ -58,7 +58,7 @@ def encode(conv: list[dict], tok, max_len: int) -> dict | None:
 
 class ChatData(Dataset):
     def __init__(self, path: Path, tok, max_len: int):
-        rows = [json.loads(l) for l in path.read_text().splitlines() if l.strip()]
+        rows = [json.loads(l) for l in path.read_text(encoding="utf-8").splitlines() if l.strip()]
         self.items, self.dropped = [], 0
         for r in rows:
             e = encode(r["conversations"], tok, max_len)
@@ -166,7 +166,7 @@ def main() -> None:
     class LogMetrics(TrainerCallback):
         def on_log(self, a, state, control, logs=None, **kw):
             if is_main and logs:
-                with metrics_path.open("a") as f:
+                with metrics_path.open("a", encoding="utf-8") as f:
                     f.write(json.dumps({"step": state.global_step, "epoch": state.epoch, "t": time.time(), **logs}) + "\n")
 
     import inspect
@@ -238,8 +238,8 @@ def main() -> None:
         }
         card_ds = ROOT / "outputs/data/dataset_card.json"
         if card_ds.exists():
-            card["dataset_card"] = json.loads(card_ds.read_text())
-        (out / "run_card.json").write_text(json.dumps(card, indent=2))
+            card["dataset_card"] = json.loads(card_ds.read_text(encoding="utf-8"))
+        (out / "run_card.json").write_text(json.dumps(card, indent=2), encoding="utf-8")
         print(json.dumps({k: card[k] for k in ("train_loss", "final_eval", "steps", "wall_clock_min")}, indent=2))
         print(f"adapter saved to {out}")
 

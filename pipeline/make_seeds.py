@@ -91,7 +91,7 @@ def main() -> None:
     args = ap.parse_args()
     seeds = make_seeds(args.n, args.seed)
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    with OUT.open("w") as f:
+    with OUT.open("w", encoding="utf-8") as f:
         for s in seeds:
             f.write(json.dumps(s) + "\n")
     by_skill: dict[str, int] = {}

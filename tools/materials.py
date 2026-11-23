@@ -11,11 +11,11 @@ PROMPTS = ROOT / "prompts"
 
 
 def topic_scope() -> str:
-    return (MAT / "topic_scope.md").read_text()
+    return (MAT / "topic_scope.md").read_text(encoding="utf-8")
 
 
 def curriculum() -> dict:
-    return json.loads((MAT / "curriculum.json").read_text())
+    return json.loads((MAT / "curriculum.json").read_text(encoding="utf-8"))
 
 
 def problems() -> list[dict]:
@@ -23,7 +23,7 @@ def problems() -> list[dict]:
     for name in ("problems_ioaa.jsonl", "problems.jsonl"):
         p = MAT / name
         if p.exists():
-            out += [json.loads(l) for l in p.read_text().splitlines() if l.strip()]
+            out += [json.loads(l) for l in p.read_text(encoding="utf-8").splitlines() if l.strip()]
     return out
 
 
@@ -49,4 +49,4 @@ def render_weights() -> str:
 
 
 def prompt(name: str) -> str:
-    return (PROMPTS / name).read_text()
+    return (PROMPTS / name).read_text(encoding="utf-8")

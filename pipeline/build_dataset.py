@@ -24,7 +24,7 @@ HELDOUT = ROOT / "eval" / "heldout.jsonl"
 
 
 def load(path):
-    return [json.loads(l) for l in path.read_text().splitlines() if l.strip()] if path.exists() else []
+    return [json.loads(l) for l in path.read_text(encoding="utf-8").splitlines() if l.strip()] if path.exists() else []
 
 
 def to_sharegpt(row: dict, system: str) -> dict:
@@ -66,7 +66,7 @@ def main() -> None:
     n_val = max(1, int(len(lines) * args.val_frac)) if len(lines) > 20 else 0
     val, train = lines[:n_val], lines[n_val:]
     for name, data in (("train.jsonl", train), ("val.jsonl", val)):
-        with (DATA / name).open("w") as f:
+        with (DATA / name).open("w", encoding="utf-8") as f:
             for l in data:
                 f.write(json.dumps(l, ensure_ascii=False) + "\n")
 
@@ -81,7 +81,7 @@ def main() -> None:
         "by_skill": dict(sorted(Counter(l["skill"] for l in lines).items())),
         "reviewed_by_human": len(decisions),
     }
-    (DATA / "dataset_card.json").write_text(json.dumps(card, indent=2))
+    (DATA / "dataset_card.json").write_text(json.dumps(card, indent=2), encoding="utf-8")
     print(json.dumps(card, indent=2))
 
 

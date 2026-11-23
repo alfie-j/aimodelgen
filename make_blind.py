@@ -21,7 +21,7 @@ CRITERIA = ["physics_right", "assumes_little", "beginner_can_follow", "picture_f
 
 
 def main(seed: int = 2026) -> None:
-    rows = [json.loads(l) for l in (D / "raw.jsonl").read_text().splitlines() if l.strip()]
+    rows = [json.loads(l) for l in (D / "raw.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
     rng = random.Random(seed)
     codes = set()
     key = {}
@@ -34,11 +34,11 @@ def main(seed: int = 2026) -> None:
         r["code"] = c
         key[c] = {"model": r["model"], "condition": r["condition"], "prompt_id": r["prompt_id"]}
     B.mkdir(parents=True, exist_ok=True)
-    (B / "key.json").write_text(json.dumps(key, indent=2))
+    (B / "key.json").write_text(json.dumps(key, indent=2), encoding="utf-8")
     rng.shuffle(rows)
     rows.sort(key=lambda r: r["prompt_id"])  # stable: shuffled within each prompt
 
-    with (B / "rating_sheet.csv").open("w", newline="") as f:
+    with (B / "rating_sheet.csv").open("w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["code", "prompt_id", *CRITERIA, "notes"])
         for r in rows:
@@ -55,7 +55,7 @@ def main(seed: int = 2026) -> None:
             cur = r["prompt_id"]
             parts.append(f"<h2>{cur}: {html.escape(r['prompt'])}</h2>")
         parts.append(f"<article><b>{r['code']}</b>\n\n{html.escape(r['text'])}</article>")
-    (B / "read.html").write_text("\n".join(parts))
+    (B / "read.html").write_text("\n".join(parts), encoding="utf-8")
     print(f"wrote {B.relative_to(ROOT)}/read.html, rating_sheet.csv, key.json ({len(rows)} answers)")
 
 

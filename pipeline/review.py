@@ -24,7 +24,7 @@ DECISIONS = DATA / "review_decisions.jsonl"
 
 
 def load(path):
-    return [json.loads(l) for l in path.read_text().splitlines() if l.strip()] if path.exists() else []
+    return [json.loads(l) for l in path.read_text(encoding="utf-8").splitlines() if l.strip()] if path.exists() else []
 
 
 def decided() -> dict[str, dict]:
@@ -59,7 +59,7 @@ def main() -> None:
         pool = [r for r in load(KEPT) if r["gen_id"] not in done]
         items += random.Random(7).sample(pool, min(args.spot_check, len(pool)))
     print(f"{len(items)} to review. Keys: a = accept, r = reject, s = skip, q = quit")
-    with DECISIONS.open("a") as out:
+    with DECISIONS.open("a", encoding="utf-8") as out:
         for i, row in enumerate(items, 1):
             show(row, i, len(items))
             while True:

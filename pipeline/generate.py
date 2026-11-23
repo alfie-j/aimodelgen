@@ -50,10 +50,10 @@ def main() -> None:
     cfg = load_config()
     teacher = args.teacher or cfg["roles"]["teacher"]
     llm = LLM(teacher, cfg)
-    seeds = [json.loads(l) for l in SEEDS.read_text().splitlines() if l.strip()]
+    seeds = [json.loads(l) for l in SEEDS.read_text(encoding="utf-8").splitlines() if l.strip()]
     done: set[str] = set()
     if RAW.exists():
-        done = {json.loads(l)["gen_id"] for l in RAW.read_text().splitlines() if l.strip()}
+        done = {json.loads(l)["gen_id"] for l in RAW.read_text(encoding="utf-8").splitlines() if l.strip()}
     jobs = [(s, k) for s in seeds for k in range(args.samples) if f"{s['id']}#{k}" not in done]
     if args.limit:
         jobs = jobs[: args.limit]
@@ -86,7 +86,7 @@ def main() -> None:
             except Exception as e:
                 print(f"[skip] {futs[fut]}: {type(e).__name__}: {str(e)[:160]}")
                 continue
-            with _write, RAW.open("a") as f:
+            with _write, RAW.open("a", encoding="utf-8") as f:
                 f.write(json.dumps(row) + "\n")
             n_ok += 1
             if n_ok % 25 == 0:

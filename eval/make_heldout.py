@@ -75,7 +75,7 @@ def main(per_template: int = 3, seed: int = 4242) -> None:
             seen.add(q)
             rows.append({"id": f"H{ti:02d}-{j}", "skill": skill, "kind": kind, "question": q, "answer": float(f"{fn(v):.6g}")})
             j += 1
-    with OUT.open("w") as f:
+    with OUT.open("w", encoding="utf-8") as f:
         for r in rows:
             f.write(json.dumps(r) + "\n")
     print(f"wrote {len(rows)} held-out questions to {OUT}")

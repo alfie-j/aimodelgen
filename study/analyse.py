@@ -21,7 +21,7 @@ OUT = ROOT / "outputs" / "study"
 
 
 def from_participants() -> dict[str, dict]:
-    rows = list(csv.DictReader(PARTS.open()))
+    rows = list(csv.DictReader(PARTS.open(encoding="utf-8")))
     out: dict[str, dict] = {}
     for g in sorted({r["group"] for r in rows}):
         rs = [r for r in rows if r["group"] == g]
@@ -33,7 +33,7 @@ def from_participants() -> dict[str, dict]:
 
 
 def main() -> None:
-    s = json.loads(SUMMARY.read_text())
+    s = json.loads(SUMMARY.read_text(encoding="utf-8"))
     g = s["groups"]
     checks = []
     tb = g["teachbot"]
@@ -53,7 +53,7 @@ def main() -> None:
     if PARTS.exists():
         result["from_participants_csv"] = from_participants()
     OUT.mkdir(parents=True, exist_ok=True)
-    (OUT / "summary.json").write_text(json.dumps(result, indent=2))
+    (OUT / "summary.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
     print(json.dumps(result, indent=2))
     print("\nThe time ratio is only ever 'about four times', with the conditions caveat. The pilot is never pooled.")
 

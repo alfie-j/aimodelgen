@@ -36,10 +36,10 @@ def main() -> None:
     args = ap.parse_args()
     cfg = load_config()
     models = args.models or cfg["roles"]["compare"]
-    prompts = [json.loads(l) for l in (ROOT / "inputs" / "compare_prompts.jsonl").read_text().splitlines() if l.strip()]
+    prompts = [json.loads(l) for l in (ROOT / "inputs" / "compare_prompts.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
     done = set()
     if OUT.exists():
-        done = {(r["model"], r["condition"], r["prompt_id"]) for r in map(json.loads, OUT.read_text().splitlines())}
+        done = {(r["model"], r["condition"], r["prompt_id"]) for r in map(json.loads, OUT.read_text(encoding="utf-8").splitlines())}
     OUT.parent.mkdir(parents=True, exist_ok=True)
 
     jobs = [(m, c, p) for m in models for c in args.conditions for p in prompts if (m, c, p["id"]) not in done]
@@ -63,7 +63,7 @@ def main() -> None:
         return {"model": m, "condition": c, "prompt_id": p["id"], "prompt": p["message"], "text": r.text,
                 "tokens_in": r.tokens_in, "tokens_out": r.tokens_out, "cost_usd": r.cost_usd, "seconds": round(r.seconds, 1)}
 
-    with ThreadPoolExecutor(6) as pool, OUT.open("a") as f:
+    with ThreadPoolExecutor(6) as pool, OUT.open("a", encoding="utf-8") as f:
         for row in pool.map(one, jobs):
             if row:
                 f.write(json.dumps(row, ensure_ascii=False) + "\n")

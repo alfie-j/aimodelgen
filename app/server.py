@@ -30,7 +30,7 @@ from tools.materials import ROOT, prompt, render_problems, render_weights, topic
 from tools.tags import THOUGHT_RE, split_stage
 
 load_env()
-CFG = json.loads((ROOT / "config" / "app.json").read_text())
+CFG = json.loads((ROOT / "config" / "app.json").read_text(encoding="utf-8"))
 MODELS = load_config()
 STATIC = Path(__file__).with_name("static")
 TEST_MODE = os.environ.get("TEACHBOT_TEST") == "1"
@@ -40,6 +40,17 @@ if MODEL_KEY not in MODELS["models"]:
 
 app = FastAPI(title="Teach Bot")
 app.mount("/static", StaticFiles(directory=STATIC), name="static")
+
+
+@app.exception_handler(Exception)
+async def crash_report(request, exc: Exception):
+    """Any unexpected error: full traceback in the terminal, a readable message in the app."""
+    import traceback
+
+    from fastapi.responses import JSONResponse
+
+    traceback.print_exception(exc)
+    return JSONResponse(status_code=500, content={"detail": f"{type(exc).__name__}: {str(exc)[:300]}"})
 
 
 # --------------------------------------------------------------------------- #
@@ -197,7 +208,7 @@ def index():
 @app.get("/api/status")
 def status():
     return {"model": MODEL.info(), "test_mode": TEST_MODE,
-            "study": json.loads((ROOT / "data" / "study_summary.json").read_text())}
+            "study": json.loads((ROOT / "data" / "study_summary.json").read_text(encoding="utf-8"))}
 
 
 @app.get("/api/learners")
@@ -206,7 +217,7 @@ def list_learners():
     if M.STORE.exists():
         for p in M.STORE.glob("*.json"):
             try:
-                r = json.loads(p.read_text())
+                r = json.loads(p.read_text(encoding="utf-8"))
             except json.JSONDecodeError:
                 continue
             first = next((h["content"] for h in r["history"] if h["role"] == "user"), "")

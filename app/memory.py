@@ -44,14 +44,14 @@ def path(lid: str) -> Path:
 
 
 def load(lid: str) -> dict:
-    return json.loads(path(lid).read_text())
+    return json.loads(path(lid).read_text(encoding="utf-8"))
 
 
 def save(rec: dict) -> None:
     STORE.mkdir(parents=True, exist_ok=True)
     with _lock:
         tmp = path(rec["id"]).with_suffix(".tmp")
-        tmp.write_text(json.dumps(rec, indent=1, ensure_ascii=False))
+        tmp.write_text(json.dumps(rec, indent=1, ensure_ascii=False), encoding="utf-8")
         tmp.replace(path(rec["id"]))
 
 

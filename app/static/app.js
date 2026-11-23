@@ -105,7 +105,13 @@ function botHTML(raw, streaming, meta = {}) {
 /* ------------------------------------------------------------------ */
 async function streamPost(url, body, onEvent) {
   const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-  if (!res.ok || !res.body) throw new Error(`${res.status} ${await res.text()}`);
+  if (!res.ok || !res.body) {
+    let detail = "";
+    try { detail = (await res.json()).detail || ""; } catch {}
+    const e = new Error(detail || `${res.status} ${res.statusText}`);
+    e.server = true;
+    throw e;
+  }
   const reader = res.body.getReader(), dec = new TextDecoder();
   let buf = "";
   for (;;) {
@@ -254,7 +260,10 @@ async function send() {
       else if (ev.type === "error") err = ev.message;
       else if (ev.type === "done") seconds = ev.seconds;
     });
-  } catch (e) { err = `Couldn't reach the app server: ${e.message}`; }
+  } catch (e) {
+    err = e.server ? `The app hit an error: ${e.message}. The terminal running the app shows the details.`
+                   : `Couldn't reach the app. Is it still running in the terminal? (${e.message})`;
+  }
   cancelAnimationFrame(frame); paint(false);
   state.busy = false; $("#sendBtn").disabled = false; input.focus();
   if (!err) {

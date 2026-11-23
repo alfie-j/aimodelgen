@@ -31,7 +31,7 @@ def test_stats():
 
 
 def test_heldout_answers_recompute():
-    rows = [json.loads(l) for l in (ROOT / "eval" / "heldout.jsonl").read_text().splitlines()]
+    rows = [json.loads(l) for l in (ROOT / "eval" / "heldout.jsonl").read_text(encoding="utf-8").splitlines()]
     assert len(rows) == 42 and len({r["question"] for r in rows}) == len(rows)
     for r in rows:
         assert r["answer"] == r["answer"] and r["answer"] != 0  # finite, non-zero

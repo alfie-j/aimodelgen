@@ -194,7 +194,7 @@ def main() -> None:
     ap.add_argument("--dup-threshold", type=float, default=0.7)
     args = ap.parse_args()
 
-    rows = [json.loads(l) for l in RAW.read_text().splitlines() if l.strip()]
+    rows = [json.loads(l) for l in RAW.read_text(encoding="utf-8").splitlines() if l.strip()]
     counts = Counter()
     kept, rejected, queue = [], [], []
     for row in rows:
@@ -235,7 +235,7 @@ def main() -> None:
         kept = still
 
     for path, data in ((KEPT, kept), (REJECTED, rejected), (QUEUE, queue)):
-        with path.open("w") as f:
+        with path.open("w", encoding="utf-8") as f:
             for r in data:
                 f.write(json.dumps(r) + "\n")
 
@@ -248,7 +248,7 @@ def main() -> None:
         "by_skill_kept": dict(Counter(r["skill_id"] for r in kept)),
         "judge_used": bool(args.judge),
     }
-    REPORT.write_text(json.dumps(report, indent=2))
+    REPORT.write_text(json.dumps(report, indent=2), encoding="utf-8")
     print(json.dumps(report, indent=2))
     print(f"\nnext: python -m pipeline.review   ({len(queue)} items need a physics decision)")
 
